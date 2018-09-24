@@ -9,4 +9,8 @@
     <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Employee.Api\Employee.Api.csproj" />
+  </ItemGroup>
+
 </Project>

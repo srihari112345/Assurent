@@ -1,80 +1,101 @@
-﻿using Newtonsoft.Json;
+﻿using Employee.Api.DTO;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Employee.App
 {
-
-    public class Employee 
-    {
-        public int EmployeeId { get; set; }
-        public string Name { get; set; }
-        public string BaseLocation { get; set; }
-
-        public Employee() { }
-    }
-
-    
     class Program
     {
-        static HttpClient client = new HttpClient();
+        //static HttpClient client = new HttpClient();
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Enter the Option\n");
+            List<EmployeeDTO> employees = new List<EmployeeDTO>();
             Console.WriteLine("1) Fetch All/ {n} employees that are actively not engaged on an Project ");
             Console.WriteLine("2) Fetch All /{n} employees that are actively engaged on 1 project ");
             Console.WriteLine("3) Fetch All /{n} employees that are actively engaged in multiple projects");
-            var option = Console.Read();
+            Console.Write("Enter the Option: ");
+            var option = int.Parse(Console.ReadLine());
 
-            switch(option)
+            switch (option)
             {
-                case 1: 
-                        SingleProjectAsync().GetAwaiter().GetResult();
-                        break;
+                case 1:
+                    employees = GetEmployeeEngagementAsync("https://localhost:44362/api/employee/zero/project").GetAwaiter().GetResult();
+                    WrtieToFile(employees, "Zero");
+                    break;
+
                 case 2:
+                    employees = GetEmployeeEngagementAsync("https://localhost:44362/api/employee/single/project").GetAwaiter().GetResult();
+                    WrtieToFile(employees, "Single");
                     break;
                 case 3:
+                    employees = GetEmployeeEngagementAsync("https://localhost:44362/api/employee/multiple/projects").GetAwaiter().GetResult();
+                    WrtieToFile(employees, "Multiple");
                     break;
             }
-
-           // RunAsync().GetAwaiter().GetResult() ;
         }
 
-        static async Task SingleProjectAsync()
+        static async Task<List<EmployeeDTO>> GetEmployeeEngagementAsync(string url)
         {
-
-            List<Employee> employees = new List<Employee>();
+            List<EmployeeDTO> employees = new List<EmployeeDTO>();
             try
             {
-                Console.ReadKey();
-                client.BaseAddress = new Uri("http://localhost:44362/");
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(
-                    new MediaTypeWithQualityHeaderValue("application/json"));
-
-                var url = "https://localhost:44362/api/employee/single/project";
-
-                HttpResponseMessage response = await client.GetAsync(url);
-                if (response.IsSuccessStatusCode)
+                using (var client = new HttpClient())
                 {
-                    employees = await response.Content.ReadAsAsync<List<Employee>>();
-                    Console.WriteLine(employees[0].Name);
-                    Console.ReadKey();
+                    client.DefaultRequestHeaders.Add("User-Agent", "Anything");
+                    client.DefaultRequestHeaders.Accept.Add(
+                        new MediaTypeWithQualityHeaderValue("application/json"));
+                 
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        employees = await response.Content.ReadAsAsync<List<EmployeeDTO>>();
+                    }
                 }
-
-                var contentsToWriteToFile = JsonConvert.SerializeObject(employees);
-
-                StreamWriter writer = new StreamWriter("D:\\Project\\AssurantAssignment\\Employee.txt", false);
-                writer.Write(contentsToWriteToFile);
+                return employees;
             }
             catch (Exception exception)
             {
                 Console.WriteLine(exception.Message);
+                Console.ReadKey();
+                return null;
+            }
+        }
+
+        static void WrtieToFile(List<EmployeeDTO> employeeList, string type)
+        {
+            try
+            {
+                Console.WriteLine("Writing to file..");
+                var count = 1;
+                var splitList = employeeList.Select((x, i) => new { Index = i, Value = x })
+                                             .GroupBy(x => x.Index / 100)
+                                             .Select(x => x.Select(v => v.Value).ToList())
+                                             .ToList();
+                splitList.ForEach(x =>
+                {
+                    using (TextWriter tw = new StreamWriter("D:\\Project\\AssurantAssignment\\Report\\" + type + "Project\\Report" + count + ".txt"))
+                    {
+                        foreach (var item in x)
+                        {
+                            tw.WriteLine(string.Format("EmployeeId: {0} - Name: {1} - BaseLocation: {2}", item.EmployeeId.ToString(), item.Name, item.BaseLocation));
+                        }
+                    }
+                    count++;
+                });
+                Console.WriteLine("Reports Generated");
+                Console.WriteLine("Press any key..");
+                Console.ReadKey();
+            }
+            catch(Exception exception)
+            {
+                Console.WriteLine(exception);
                 Console.ReadKey();
             }
         }
