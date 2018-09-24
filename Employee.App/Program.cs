@@ -12,11 +12,9 @@ namespace Employee.App
 {
     class Program
     {
-        //static HttpClient client = new HttpClient();
-
         static void Main(string[] args)
         {
-            List<EmployeeDTO> employees = new List<EmployeeDTO>();
+            List<EmployeeModel> employees = new List<EmployeeModel>();
             Console.WriteLine("1) Fetch All/ {n} employees that are actively not engaged on an Project ");
             Console.WriteLine("2) Fetch All /{n} employees that are actively engaged on 1 project ");
             Console.WriteLine("3) Fetch All /{n} employees that are actively engaged in multiple projects");
@@ -41,9 +39,9 @@ namespace Employee.App
             }
         }
 
-        static async Task<List<EmployeeDTO>> GetEmployeeEngagementAsync(string url)
+        static async Task<List<EmployeeModel>> GetEmployeeEngagementAsync(string url)
         {
-            List<EmployeeDTO> employees = new List<EmployeeDTO>();
+            List<EmployeeModel> employees = new List<EmployeeModel>();
             try
             {
                 using (var client = new HttpClient())
@@ -55,7 +53,7 @@ namespace Employee.App
                     HttpResponseMessage response = await client.GetAsync(url);
                     if (response.IsSuccessStatusCode)
                     {
-                        employees = await response.Content.ReadAsAsync<List<EmployeeDTO>>();
+                        employees = await response.Content.ReadAsAsync<List<EmployeeModel>>();
                     }
                 }
                 return employees;
@@ -68,7 +66,7 @@ namespace Employee.App
             }
         }
 
-        static void WrtieToFile(List<EmployeeDTO> employeeList, string type)
+        static void WrtieToFile(List<EmployeeModel> employeeList, string type)
         {
             try
             {
@@ -84,7 +82,7 @@ namespace Employee.App
                     {
                         foreach (var item in x)
                         {
-                            tw.WriteLine(string.Format("EmployeeId: {0} - Name: {1} - BaseLocation: {2}", item.EmployeeId.ToString(), item.Name, item.BaseLocation));
+                            tw.WriteLine(string.Format("EmployeeId: {0} | Name: {1} | BaseLocation: {2}", item.EmployeeId.ToString(), item.Name, item.BaseLocation));
                         }
                     }
                     count++;
